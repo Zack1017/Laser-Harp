@@ -2,6 +2,7 @@
 #imports
 import time
 import board
+import led
 from analogio import AnalogIn
 import busio
 import simpleio
@@ -15,6 +16,9 @@ from adafruit_midi.control_change import ControlChange
 
 #access pin A5 and A2 on M4 express
 analog_in = AnalogIn(board.A5)
+pixel_pin = AnalogIn(board.A1)
+
+num_pixels = 144
 
 #finds voltage at pin x
 def get_voltage(pin):
@@ -43,6 +47,9 @@ i2c = board.I2C()  # uses board.SCL and board.SDA
 
     # Create the TCA9548A object and give it the I2C bus
 tca = adafruit_tca9548a.TCA9548A(i2c)
+
+pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.3, auto_write=False)
+
 
     #  setup time of flight sensors to use TCA9548A inputs
 tof_0 = adafruit_vl53l4cd.VL53L4CD(tca[0])
@@ -123,7 +130,17 @@ stddev_7 = False
 #array of stddevs
 stddevs = [stddev_0, stddev_1, stddev_2, stddev_3, stddev_4, stddev_5, stddev_6, stddev_7]
 
-
+# Define colors (RGB)
+colors = [
+    (255, 0, 0),     # Red
+    (0, 255, 0),     # Green
+    (0, 0, 255),     # Blue
+    (255, 255, 0),   # Yellow
+    (0, 255, 255),   # Cyan
+    (255, 0, 255),   # Magenta
+    (255, 165, 0),   # Orange
+    (128, 0, 255)    # Violet
+]
 
 val = flight_height
 
@@ -264,6 +281,8 @@ while True:
 
                         #modulates volume
                         midi.send(ControlChange(7,vol))
+                        set_zone_color(zone=f, color=(colors[f]), brightness=vol)
+
 
 
                 #  if tof registers a height = to or greater than set max height
@@ -274,6 +293,8 @@ while True:
 
                     #  send midi note off
                     midi.send(NoteOff(notes[f], velocity))
+                    set_zone_color(zone=f, color=(0,0,0), brightness=0)
+
 
         #gets voltage for the switch check
         volt = get_voltage(analog_in)
